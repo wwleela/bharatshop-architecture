@@ -1,0 +1,6 @@
+/* global.css — BharatShop OS 2026 */
+/* NativeWind 4 requires this file. Referenced in app/_layout.tsx via import. */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
