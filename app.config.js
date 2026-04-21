@@ -1,17 +1,17 @@
 // app.config.js — BharatShop OS 2026 (SDK 54)
 module.exports = ({ config }) => ({
   ...config,
-  name:        'BharatShop',
+  name:        'BharatShop OS',
   slug:        'bharatshop-os',
   version:     '0.1.0',
   orientation: 'portrait',
   icon:        './assets/icon.png',
-  userInterfaceStyle: 'light',
+  userInterfaceStyle: 'dark',
   scheme:      'bharatshop',
   splash: {
     image:           './assets/splash.png',
     resizeMode:      'contain',
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#0F0F0F',
   },
   assetBundlePatterns: ['**/*'],
   ios: {
@@ -20,21 +20,15 @@ module.exports = ({ config }) => ({
     infoPlist: {
       NSCameraUsageDescription:
         'BharatShop uses the camera to scan supplier bills and update your inventory automatically.',
-      NSLocationWhenInUseUsageDescription:
-        'BharatShop uses your location to show relevant product trends and weather suggestions for your area.',
     },
   },
   android: {
     adaptiveIcon: {
       foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FFFFFF',
+      backgroundColor: '#0F0F0F',
     },
     package:     'com.urbangliding.bharatshop',
-    permissions: [
-      'android.permission.CAMERA',
-      'android.permission.ACCESS_FINE_LOCATION',
-      'android.permission.ACCESS_COARSE_LOCATION',
-    ],
+    permissions: ['android.permission.CAMERA'],
     softwareKeyboardLayoutMode: 'pan',
   },
   web: {
@@ -46,13 +40,6 @@ module.exports = ({ config }) => ({
       {
         cameraPermission:
           'BharatShop needs camera access to scan supplier bills — no typing required.',
-      },
-    ],
-    [
-      'expo-location',
-      {
-        locationAlwaysAndWhenInUsePermission:
-          'BharatShop uses your location to show local product trends and weather suggestions.',
       },
     ],
     'expo-router',
@@ -70,4 +57,5 @@ module.exports = ({ config }) => ({
       projectId: 'FILL_IN_AFTER_EAS_INIT',
     },
   },
+  // NOTE: sdkVersion intentionally removed — causes wrong SDK detection
 });
