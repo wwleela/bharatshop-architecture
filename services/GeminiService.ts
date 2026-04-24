@@ -203,3 +203,42 @@ export async function getDailyBriefing(params: {
     };
   }
 }
+
+/**
+ * scanBillBase64 — accepts raw base64 string directly (no URI needed)
+ * Drop-in for scanner.tsx which calls cam.capture() → base64
+ */
+export async function scanBillBase64(base64: string): Promise<ScanResult> {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 12_000);
+
+  try {
+    const response = await fetch(`${API_BASE}/scan-bill`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: base64, mimeType: 'image/jpeg' }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.error || `Server error ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result;
+
+  } catch (err: any) {
+    clearTimeout(timeout);
+    return {
+      success: false,
+      error: err.name === 'AbortError' ? 'Scan timed out. Try again.' : err.message,
+      items: [], confidence: 'low', extraction_notes: 'Error',
+      supplier: null, invoice_date: null, invoice_number: null,
+      detected_language: 'unknown', subtotal: null, tax_amount: null,
+      grand_total: null, currency: 'INR', latency_ms: 0,
+    };
+  }
+}

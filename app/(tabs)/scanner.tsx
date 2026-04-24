@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import { CameraView } from 'expo-camera';
 
 import { useCamera }          from '@/hooks/useCamera';
-import { scanBillImage }      from '@/services/GeminiService';
+import { scanBillBase64 }      from '@/services/GeminiService';
 import { addScannedProducts } from '@/services/SupabaseService';
 import {
   trackBillScanned, trackScanFailed, trackManualEntry,
@@ -77,19 +77,19 @@ export default function ScannerTab() {
       return;
     }
 
-    const scanned = await scanBillImage(base64);
+    const scanned = await scanBillBase64(base64);
 
-    if (!scanned || scanned.length === 0) {
+    if (!scanned || !scanned.success || scanned.items.length === 0) {
       await trackScanFailed('empty');
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
       setStage('manual');
     } else {
       await trackBillScanned(
-        scanned.length,
-        scanned.every(p => p.confidence === 'high'),
+        scanned.items.length,
+        scanned.items.every(p => p.confidence === "high"),
       );
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setProducts(scanned);
+      setProducts(scanned.items);
       setStage('results');
     }
   }, [cam]);
