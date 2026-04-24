@@ -17,6 +17,7 @@
     "expo-haptics": "*",
     "expo-image-manipulator": "*",
     "expo-linking": "*",
+    "expo-location": "~19.0.8",
     "expo-router": "*",
     "expo-secure-store": "*",
     "expo-splash-screen": "*",
