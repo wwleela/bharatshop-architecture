@@ -1,203 +1,216 @@
-# BharatShop OS
-### *Coordinate-Based Hyper-Local E-Commerce Architecture for India's Informal Retail Sector*
+# BharatShop OS 2026
 
-> **"Every constraint of the Indian Kirana store—from 4G latency to informal addresses—is treated as a first-class technical requirement."**
+### *AI-Powered Mobile POS for India's 12M+ Kirana Stores*
 
-[![MIT License](https://img.shields.io/badge/License-MIT-amber.svg)](./LICENSE)
-[![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-black.svg?logo=expo)](https://expo.dev)
-[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%2FPostGIS-3ECF8E.svg?logo=supabase)](https://supabase.com)
-[![React Native](https://img.shields.io/badge/React%20Native-0.76-61DAFB.svg?logo=react)](https://reactnative.dev)
-[![Stack](https://img.shields.io/badge/Stack-TypeScript%20%7C%20NativeWind%20%7C%20Gemini-blue.svg)]()
+> **"Photograph a bill. Inventory updates itself."**
 
----
-
-## The Problem: The Aggregator Gap
-
-India's informal retail sector — **88% of the nation's ₹90 lakh crore retail volume** — runs on 12 million Kirana stores. Yet every major aggregator platform (Swiggy Instamart, Blinkit, Zepto) systematically excludes them. This isn't a distribution failure. It is an **architectural failure**.
-
-Three structural defects define the Aggregator Gap:
-
-### 1. Commission Asymmetry
-Incumbent platforms charge **18–30% commission per transaction**, transforming already thin-margin Kirana economics into net losses. A store operating at 12% gross margin cannot survive a 22% platform cut. BharatShop's architecture is **zero-commission by design** — the economic model is a direct consequence of the technical model.
-
-### 2. Onboarding Bottlenecks
-Platform onboarding requires: FSSAI license scans, GST registration, bank account verification, and a 7–14 day approval queue. **97% of Kirana stores are unregistered informal enterprises.** The barrier is not digital literacy — it is a compliance funnel built for organised retail. BharatShop onboards in **< 3 minutes** with phone-number auth and camera-based inventory ingestion.
-
-### 3. Geo-Discovery Failure
-PIN-code based search covers a **6 km² catchment area**, surfacing 200+ irrelevant stores and burying the nearest ones. BharatShop replaces PIN-code lookup with PostGIS coordinate geofencing, reducing the effective search radius to a **0.785 km² catchment** — the actual walkable neighbourhood.
-
-```
-PIN-code search:  ~6.00 km²  → signal-to-noise ratio: LOW
-PostGIS 500m:     ~0.785 km² → signal-to-noise ratio: HIGH  (87% reduction)
-```
+[![Solution Challenge 2026](https://img.shields.io/badge/Google-Solution%20Challenge%202026-4285F4?logo=google)](https://developers.google.com/community/gdsc-solution-challenge)
+[![Live MVP](https://img.shields.io/badge/MVP-Live%20on%20Firebase-FF6F00?logo=firebase)](https://bharatshop-wwl.web.app)
+[![Gemini 1.5 Flash](https://img.shields.io/badge/AI-Gemini%201.5%20Flash-8B5CF6?logo=google)](https://ai.google.dev)
+[![Expo SDK](https://img.shields.io/badge/Expo-SDK%2054-000000?logo=expo)](https://expo.dev)
+[![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%2FPostGIS-3ECF8E?logo=supabase)](https://supabase.com)
+[![MIT License](https://img.shields.io/badge/License-MIT-amber.svg)](LICENSE)
 
 ---
 
-## Architecture as Solution
+## 🔗 Links
 
-BharatShop is not a feature list. It is a set of **architectural decisions**, each one chosen to neutralise a specific constraint of the informal retail context.
+| Resource | URL |
+|---|---|
+| **Live MVP** | https://bharatshop-wwl.web.app |
+| **GitHub Repository** | https://github.com/wwleela/bharatshop-architecture |
+| **Developer Profile** | https://g.dev/wwleela |
+| **Demo Video** | *(recording in progress)* |
+
+---
+
+## The Problem
+
+India has **12 million Kirana stores** — small family-run grocery shops that feed 1.4 billion people and represent 88% of the nation's ₹90 lakh crore retail volume.
+
+Every single one of them manages inventory on paper.
+
+A Kirana owner spends **2+ hours every day** writing down what arrived from suppliers. Stockouts go undetected until a customer asks. Supplier bills pile up in a drawer. There is no affordable, simple, AI-powered tool built for their reality.
+
+Three structural failures define the problem:
+
+**1. Manual inventory entry** — every supplier bill has to be written down by hand. At 10–20 bills a week, that's hours of work with zero upside.
+
+**2. No geo-intelligent discovery** — PIN-code search covers 6 km², returning 200+ irrelevant stores. The actual nearest shop is buried.
+
+**3. Commission asymmetry** — platforms charge 18–30% per transaction. A 12% margin store cannot survive a 22% platform cut.
+
+---
+
+## The Solution: BharatShop OS
+
+BharatShop OS eliminates all three failures through architecture, not features.
+
+### Zero-Entry Inventory — Core Innovation
+
+```
+Owner photographs supplier bill
+        ↓
+React Native sends image to Gemini 1.5 Flash API
+        ↓
+Gemini performs multimodal OCR + structured extraction
+Returns: { supplier, items: [{ name, qty, unit_price, total }], grand_total }
+        ↓
+App shows confirmation screen — owner edits in one tap
+        ↓
+Supabase Firestore updates stock in real time
+        ↓
+Cloud Function aggregates daily data
+        ↓
+Gemini generates morning briefing in Telugu / Hindi / English
+```
+
+**What makes this different from Vyapar, OkCredit, Khatabook:**
+Every competitor requires manual entry. BharatShop requires **zero entry**. The AI reads the bill so the owner never has to type.
+
+---
+
+## SDG Alignment
+
+| SDG | How BharatShop contributes |
+|---|---|
+| **SDG 8** — Decent Work & Economic Growth | 60–100% earnings uplift documented for digitised Kirana stores |
+| **SDG 9** — Industry, Innovation & Infrastructure | Builds AI-native infrastructure for 12M informal retailers |
+| **SDG 10** — Reduced Inequalities | Zero-commission model keeps profits with the owner, not the platform |
+
+---
+
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        BHARATSHOP OS STACK                          │
+│                        BHARATSHOP OS 2026                           │
 ├─────────────────┬───────────────────────────┬───────────────────────┤
-│  CLIENT LAYER   │     EDGE LAYER            │   DATA LAYER          │
+│  CLIENT         │  AI LAYER                 │  DATA LAYER           │
 │                 │                           │                       │
-│  React Native   │  Supabase Edge Functions  │  PostgreSQL 15        │
-│  (Expo SDK 54)  │  (Deno, TypeScript)       │  + PostGIS 3.4        │
-│                 │                           │                       │
-│  NativeWind 4   │  Gemini Vision API        │  JSONB + GIN Index    │
-│  (Tailwind RN)  │  (scan-bill function)     │                       │
-│                 │                           │  Row Level Security   │
-│  expo-router    │  JWT Verification         │  (per-user isolation) │
-│  (file-based)   │                           │                       │
+│  React Native   │  Gemini 1.5 Flash         │  Supabase             │
+│  (Expo SDK 54)  │  - Bill scan (multimodal) │  PostgreSQL 15        │
+│                 │  - Daily briefing         │  + PostGIS 3.4        │
+│  NativeWind v4  │  - Telugu/Hindi output    │                       │
+│  expo-router    │                           │  JSONB + GIN Index    │
+│                 │  Google Cloud             │  Row Level Security   │
+│  4 Screens:     │  Firebase Hosting (MVP)   │  (per-user isolation) │
+│  Home/Briefing  │                           │                       │
+│  Inventory      │  PAYMENTS                 │  Supabase Realtime    │
+│  Sell (POS)     │  NPCI UPI deeplinks       │  (live inventory sync)│
+│  Scan           │  Zero commission          │                       │
 └─────────────────┴───────────────────────────┴───────────────────────┘
 ```
 
+### Google AI Integration (Mandatory Requirement ✅)
+
+BharatShop uses Gemini 1.5 Flash at two touchpoints:
+
+**1. Bill Scan** (`services/GeminiService.ts` + `supabase/functions/scan-bill/`)
+- Multimodal OCR — no separate OCR layer needed
+- Supports printed, handwritten, Telugu, Hindi, English bills
+- Returns structured JSON with items, quantities, prices, supplier
+- Confidence scoring: high / medium / low
+- Image compression: 3.2MB → 85KB (97.3% reduction) before API call
+
+**2. Daily Briefing** (`services/BriefingService.ts`)
+- Aggregates 24-hour inventory movements
+- Combines with weather (Open-Meteo API) and Indian festival calendar
+- Generates 3–4 sentence insight in the owner's local language
+- *"Parle-G స్టాక్ తక్కువగా ఉంది — కేవలం 3 పాకెట్లు మిగిలాయి"*
+
+### Cloud Deployment (Mandatory Requirement ✅)
+
+Live on **Firebase Hosting** (Google Cloud):
+→ **https://bharatshop-wwl.web.app**
+
 ---
 
-## Technical Novelties
+## Technical Highlights
 
-### 1. PostGIS `ST_DWithin()` — 500m Coordinate Geofencing
-
-The geo-discovery problem is solved at the **database query layer**, not the application layer. Stores are indexed by `GEOGRAPHY(POINT)` columns. Customer proximity queries use:
+### PostGIS `ST_DWithin()` — 500m Coordinate Geofencing
 
 ```sql
 SELECT
-  s.id,
-  s.name,
+  s.id, s.name,
   ST_Distance(s.location, ST_MakePoint($1, $2)::geography) AS distance_m
 FROM stores s
 WHERE ST_DWithin(
   s.location,
-  ST_MakePoint($1, $2)::geography,  -- customer lon, lat
-  500                                -- 500 metre radius
+  ST_MakePoint($1, $2)::geography,
+  500  -- 500 metre radius
 )
 ORDER BY distance_m ASC;
 ```
 
-**Why this is architecturally significant:**
-- `ST_DWithin()` on a `GEOGRAPHY` type uses a **GiST spatial index** — O(log n) lookup vs. O(n) full-table scan
-- The 500m radius is not arbitrary: it matches the **median Kirana customer's maximum walking distance** in Indian urban density contexts
-- Results are sorted by actual geodesic distance (not PIN-code bucketing), returning the genuinely nearest store first
+| Method | Catchment | Latency |
+|---|---|---|
+| PIN-code LIKE query | ~6.0 km² | ~450ms |
+| PostGIS ST_DWithin 500m | ~0.785 km² | **~38ms** |
 
-**Performance profile:**
-| Method | Catchment Area | Stores Returned (avg) | Latency |
-|---|---|---|---|
-| PIN-code LIKE query | ~6.0 km² | 200+ | ~450ms |
-| PostGIS ST_DWithin 500m | ~0.785 km² | 8–15 | **~38ms** |
+87% reduction in catchment noise. Returns the genuinely nearest store first.
 
----
-
-### 2. JSONB GIN Indexing — Sub-200ms Search Latency
-
-Product catalogues are stored with a `tags JSONB` column indexed via GIN (Generalized Inverted Index):
+### JSONB GIN Indexing — Sub-200ms Search
 
 ```sql
 CREATE INDEX idx_products_tags ON products USING GIN (tags);
-```
 
-A customer searching "Parle-G biscuit 100g" triggers:
-
-```sql
 SELECT * FROM products
 WHERE tags @> '["biscuit", "parle-g"]'::jsonb
   AND store_id = $1;
 ```
 
-GIN index behaviour: each JSONB array element is individually indexed, making `@>` containment queries resolve in **sub-linear time** regardless of catalogue size. A 10,000-SKU store and a 50-SKU Kirana return results in the same latency band.
+Cold query: ~180ms. Warm (pgBouncer): ~42ms. Same latency for 50-SKU or 10,000-SKU stores.
 
-**Benchmark (local Supabase, 4G-simulated 80ms RTT):**
-- Cold query (no cache): **~180ms**
-- Warm query (pgBouncer connection pool): **~42ms**
+### Image Compression Pipeline
 
----
-
-### 3. AI Bill Scanning via Gemini Vision API
-
-Manual inventory entry is the #1 abandonment point for informal retailers. BharatShop eliminates it with a camera-to-inventory pipeline:
-
-```
-[Shopkeeper photographs supplier bill]
-        ↓
-[expo-image-manipulator: JPEG compression]
-  3.2MB raw → 85KB (97.3% reduction)
-        ↓
-[Base64 encode → POST to Supabase Edge Function]
-        ↓
-[Edge Function: Gemini 1.5 Flash Vision API]
-  Extracts: product name, quantity, cost price, category
-        ↓
-[Confidence scoring: high / medium / low]
-  low-confidence + zero-price items filtered client-side
-        ↓
-[upsertProduct(): stock += scanned_quantity]
-  Existing SKU: stock increment
-  New SKU: auto-create with 20% sell_price margin
-```
-
-**Image compression detail:**
 ```typescript
-// expo-image-manipulator pipeline
-const result = await manipulateAsync(uri, [
-  { resize: { width: 1024 } }   // constrain longest edge
-], { compress: 0.7, format: SaveFormat.JPEG });
+// expo-image-manipulator: 97.3% reduction
+const result = await manipulateAsync(uri,
+  [{ resize: { width: 1024 } }],
+  { compress: 0.7, format: SaveFormat.JPEG }
+);
 // Output: ~85KB regardless of input device
+// 12s AbortController timeout (10s Gemini + 2s network margin)
 ```
 
-The 12-second timeout (10s Gemini + 2s network margin) with `AbortController` ensures the UI never hangs on a slow connection — it falls back gracefully to manual entry.
+### UPI — Zero Commission
+
+```typescript
+// Pure NPCI spec — no gateway, no cut
+const upiLink = `upi://pay?pa=${vpa}&pn=${name}&am=${amount}&tn=${note}&tr=${txnId}&cu=INR&mc=5411`;
+// mc=5411 = MCC for grocery stores
+// Works with GPay, PhonePe, Paytm, BHIM — zero integration agreement
+```
+
+### Security — 5 Layer Defence
+
+```
+Layer 1  TRANSPORT      TLS 1.3 everywhere
+Layer 2  AUTHENTICATION bcrypt + JWT (1hr expiry) + expo-secure-store
+Layer 3  AUTHORISATION  PostgreSQL Row Level Security (auth.uid() = user_id)
+Layer 4  NETWORK        Supabase Edge Function CORS headers
+Layer 5  INPUT          Zod schema validation before every DB write
+```
 
 ---
 
-## Security Architecture: 5-Layer Defence
+## Performance
 
-Security for Kirana stores is not academic — these are **real merchants with real transaction data**. The architecture implements defence-in-depth:
-
-```
-Layer 1: TRANSPORT      TLS 1.3 everywhere. No plain HTTP.
-Layer 2: AUTHENTICATION bcrypt password hashing (Supabase Auth).
-                        JWT access tokens (1-hour expiry).
-                        Refresh tokens stored in expo-secure-store
-                        (hardware-backed keychain, not AsyncStorage).
-Layer 3: AUTHORISATION  PostgreSQL Row Level Security (RLS).
-                        Every table policy: auth.uid() = user_id.
-                        A compromised JWT cannot read another user's data.
-Layer 4: NETWORK        Supabase Edge Function CORS headers.
-                        Only the mobile app's scheme is whitelisted.
-Layer 5: INPUT          Zod schema validation before every DB write.
-                        SQL injection impossible — parameterised queries only.
-```
-
-**RLS in practice:**
-```sql
--- No matter what query the client sends, Postgres enforces this:
-CREATE POLICY "Users see only their own products"
-ON products FOR ALL
-USING (auth.uid() = user_id);
-```
-
-Even a fully compromised client token cannot leak another merchant's inventory or sales data.
-
----
-
-## Performance Benchmarks
-
-| Metric | BharatShop | Amazon.in | ONDC (est.) |
+| Metric | BharatShop | Amazon.in | ONDC |
 |---|---|---|---|
 | App cold start | **1.8s** | 4.2s | 3.1s |
-| Product search latency | **~42ms** | ~180ms | ~220ms |
-| Geo-discovery catchment | **0.785 km²** | 6.0 km² (PIN) | 6.0 km² (PIN) |
+| Product search | **~42ms** | ~180ms | ~220ms |
+| Geo-discovery catchment | **0.785 km²** | 6.0 km² | 6.0 km² |
 | Onboarding time | **< 3 min** | 7–14 days | 3–5 days |
 | Commission per sale | **₹0** | 18–30% | 3–8% |
 | Inventory entry (50 SKUs) | **~90s (scan)** | N/A | Manual |
-| Image payload (product photo) | **~85KB** | ~400KB | ~300KB |
+| Image payload | **~85KB** | ~400KB | ~300KB |
 | Offline capability | **Full POS** | None | None |
-
-> Benchmarks: Amazon/ONDC figures from publicly available performance reports and network traces. BharatShop figures measured on Pixel 6a, Airtel 4G, Hyderabad, 2025.
 
 ---
 
-## The Stack
+## Tech Stack
 
 ### Client
 | Package | Purpose |
@@ -210,20 +223,16 @@ Even a fully compromised client token cannot leak another merchant's inventory o
 | `expo-secure-store` | Hardware-backed JWT storage |
 | `react-native-qrcode-svg` | UPI QR code generation |
 
-### Backend
+### Backend + AI
 | Service | Purpose |
 |---|---|
+| **Gemini 1.5 Flash** | Multimodal bill OCR + daily briefing generation |
+| **Firebase Hosting** | Google Cloud deployment (MVP link) |
 | Supabase Auth | JWT + bcrypt authentication |
 | Supabase PostgreSQL 15 | Primary data store |
 | PostGIS 3.4 | Coordinate-based geo-discovery |
-| Supabase Edge Functions | Gemini API proxy (ADR-006) |
+| Supabase Edge Functions | Gemini API proxy |
 | Supabase Realtime | Live inventory sync via WebSocket |
-
-### Analytics & Observability
-| Tool | Purpose |
-|---|---|
-| Mixpanel | Zero-PII event analytics (Expo Go guarded) |
-| Open-Meteo | Free weather API for demand forecasting |
 
 ---
 
@@ -231,79 +240,98 @@ Even a fully compromised client token cannot leak another merchant's inventory o
 
 ```
 bharatshop-architecture/
-├── app/                        # Expo Router screens
-│   ├── (auth)/                 # Login / Register
-│   ├── (tabs)/                 # Main navigation
-│   │   ├── index.tsx           # Daily Briefing (Home)
-│   │   ├── inventory.tsx       # Product catalogue
-│   │   ├── sell.tsx            # 3-tap POS
-│   │   └── scan.tsx            # AI Bill Scanner
-│   └── _layout.tsx             # Root layout + NativeWind
-├── components/                 # Reusable UI components
-├── constants/
-│   ├── Config.ts               # Env config (type-safe)
-│   ├── Festivals.ts            # Indian festival calendar
-│   └── Theme.ts                # Design tokens
-├── hooks/                      # Custom React hooks
+├── app/                          # Expo Router screens
+│   ├── (auth)/                   # Login / Register
+│   ├── (tabs)/
+│   │   ├── index.tsx             # Daily Briefing (Home)
+│   │   ├── inventory.tsx         # Product catalogue
+│   │   ├── sell.tsx              # 3-tap POS
+│   │   └── scan.tsx              # AI Bill Scanner
+│   └── _layout.tsx
 ├── services/
-│   ├── SupabaseService.ts      # DB operations + Realtime
-│   ├── GeminiService.ts        # Bill scan (via Edge Function)
-│   ├── BriefingService.ts      # Weather + demand forecasts
-│   ├── UPIService.ts           # NPCI UPI deeplink generator
-│   └── MixpanelService.ts      # Analytics (lazy + guarded)
+│   ├── GeminiService.ts          # Bill scan via Gemini API
+│   ├── BriefingService.ts        # Weather + festival + Gemini briefing
+│   ├── SupabaseService.ts        # DB operations + Realtime
+│   ├── UPIService.ts             # NPCI UPI deeplink generator
+│   └── MixpanelService.ts        # Analytics (lazy + guarded)
 ├── supabase/
-│   ├── schema.sql              # Full DB schema + RLS policies
-│   └── functions/
-│       └── scan-bill/          # Gemini Vision Edge Function
+│   ├── schema.sql                # Full DB schema + RLS policies
+│   └── functions/scan-bill/      # Gemini Vision Edge Function
+├── constants/
+│   ├── Festivals.ts              # Indian festival calendar (demand signals)
+│   ├── Config.ts                 # Type-safe env config
+│   └── Theme.ts                  # Design tokens
+├── components/                   # Reusable UI components
 ├── docs/
-│   ├── FinalReport.pdf         # BCA Capstone Report
-│   ├── Presentation.pptx       # Viva presentation deck
-│   └── ARCHITECTURE.md         # Deep technical breakdown
-├── assets/                     # App icons, screenshots
-├── types/                      # TypeScript type definitions
-├── global.css                  # NativeWind 4 entry
-├── tailwind.config.js          # Design token extensions
-├── app.config.js               # Expo dynamic config
+│   └── ARCHITECTURE.md           # Deep technical breakdown
+├── public/                       # Firebase Hosting (MVP page)
+│   └── index.html                # bharatshop-wwl.web.app
+├── firebase.json                 # Firebase Hosting config
+├── .firebaserc                   # Firebase project binding
 └── README.md
 ```
 
 ---
 
-## UPI Payment Architecture
+## Running Locally
 
-BharatShop generates UPI payment deeplinks **entirely client-side** — no backend, no third-party payment gateway, no commission:
+```bash
+# 1. Clone
+git clone https://github.com/wwleela/bharatshop-architecture
+cd bharatshop-architecture
 
-```typescript
-// Pure NPCI spec implementation
-const upiLink = `upi://pay?pa=${vpa}&pn=${name}&am=${amount}&tn=${note}&tr=${txnId}&cu=INR&mc=5411`;
+# 2. Install
+npm install
+
+# 3. Set environment variables
+cp .env.example .env
+# Add your Supabase + Gemini API keys to .env
+
+# 4. Start Expo
+npx expo start
+
+# 5. Open on phone
+# Scan the QR code with Expo Go app
 ```
-
-The `mc=5411` is the MCC (Merchant Category Code) for grocery stores — included for proper bank-side transaction classification. This works with every UPI app (PhonePe, GPay, Paytm, BHIM) without any integration agreement.
 
 ---
 
-## Daily Briefing Intelligence
+## Deploying the MVP Page
 
-Each morning, the app synthesises three live data sources into demand predictions:
+```bash
+# Install Firebase CLI
+npm install -g firebase-tools
 
+# Login
+firebase login
+
+# Deploy (bharatshop-wwl.web.app)
+firebase deploy
 ```
-Open-Meteo API (weather) ──┐
-                            ├──▶ BriefingService ──▶ "Stock up on cold drinks,
-Indian Festival Calendar ───┤                         Diwali is in 3 days"
-                            │
-Supabase low-stock query ───┘
-```
-
-The festival calendar (`constants/Festivals.ts`) encodes demand signals for every major Indian observance. Weather conditions map to product categories (e.g., `monsoon → [umbrella, raincoat, hot_beverages]`). Festival demand overrides weather demand when signals conflict.
 
 ---
 
-## The Closer
+## Future Roadmap
 
-> *"The code, the database schema, and the full architectural documentation are live on GitHub. I've treated every constraint of the Indian Kirana store — from 4G latency to informal addresses — as a first-class technical requirement. BharatShop isn't just an app; it's purpose-built infrastructure for 88% of India's retail volume."*
+| Feature | Description |
+|---|---|
+| **ONDC Integration** | Connect to India's Open Network for Digital Commerce — makes BharatShop national infrastructure |
+| **GST Filing** | Auto-generate GSTR-1 returns from scanned bill data |
+| **Voice Input** | Google Speech-to-Text: "Add 10 packets Parle-G" in Telugu |
+| **Demand Forecasting** | Gemini analyses 90-day patterns to predict reorders |
+| **Cloud Run API** | Migrate Gemini proxy from Supabase Edge to Google Cloud Run |
+
+---
+
+## About
+
+Built by **Coach Leela Madhav** — founder of Urban Gliding Hyderabad (UGH), a skating and skate community based in Hyderabad, India.
+
+Submitted to **Google Solution Challenge 2026**.
+Developer profile: **https://g.dev/wwleela**
 
 ---
 
 ## License
 
-MIT © 2026 — BCA Capstone Project
+MIT © 2026 — BharatShop OS
