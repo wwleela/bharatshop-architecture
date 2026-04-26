@@ -7,7 +7,7 @@ import * as ImageManipulator from 'expo-image-manipulator';
 import { SaveFormat } from 'expo-image-manipulator';
 
 // ── PASTE YOUR KEY HERE ─────────────────────────────────────────────
-const GEMINI_KEY = 'AIzaSyBBC9SOSbi6UUtBsnSWCsnDclCl96bUtGU';
+const GEMINI_KEY = (require('expo-constants').default.expoConfig?.extra?.EXPO_PUBLIC_GEMINI_API_KEY as string) || '';
 // ───────────────────────────────────────────────────────────────────
 
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
