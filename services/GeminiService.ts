@@ -1,23 +1,35 @@
 /**
  * BharatShop OS — GeminiService.ts
- * Replace your existing services/GeminiService.ts with this file.
- *
- * Changes from original:
- *   - Calls Google Cloud Run instead of Supabase Edge Function
- *   - Same interface — drop-in replacement, no screen changes needed
- *   - Adds offline detection + graceful fallback
- *   - 12-second timeout with AbortController (matching original)
+ * DEMO MODE: Direct Gemini API — no backend required
  */
 
 import * as ImageManipulator from 'expo-image-manipulator';
 import { SaveFormat } from 'expo-image-manipulator';
 
-// ── Config ──────────────────────────────────────────────────────────────────
-// Add EXPO_PUBLIC_API_URL=https://bharatshop-gemini-api-xxxx-el.a.run.app
-// to your .env file after deployment
-const API_BASE = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:8080';
+// ── PASTE YOUR KEY HERE ─────────────────────────────────────────────
+const GEMINI_KEY = 'AIzaSyBBC9SOSbi6UUtBsnSWCsnDclCl96bUtGU';
+// ───────────────────────────────────────────────────────────────────
 
-// ── Types ───────────────────────────────────────────────────────────────────
+const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_KEY}`;
+
+const PROMPT = `You are an inventory parser for a Kirana grocery store in India.
+Extract all items from this supplier bill image.
+Return ONLY valid JSON, no other text:
+{
+  "supplier": "string or null",
+  "invoice_date": "YYYY-MM-DD or null",
+  "items": [
+    {
+      "name": "string",
+      "quantity": 1,
+      "unit": "pcs",
+      "unit_price": 0,
+      "total_price": 0
+    }
+  ],
+  "grand_total": 0,
+  "confidence": "high"
+}`;
 
 export interface ScannedItem {
   name: string;
@@ -43,7 +55,6 @@ export interface ScanResult {
   confidence: 'high' | 'medium' | 'low';
   extraction_notes: string;
   latency_ms: number;
-  validation_issues?: string[];
   error?: string;
 }
 
@@ -54,119 +65,117 @@ export interface BriefingResult {
   latency_ms: number;
 }
 
-// ── Image compression (unchanged from original) ─────────────────────────────
-// 97.3% size reduction: 3.2MB raw → ~85KB
-async function compressImage(uri: string): Promise<string> {
-  const result = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: 1024 } }],  // constrain longest edge
-    { compress: 0.7, format: SaveFormat.JPEG }
-  );
-
-  // Convert to base64
-  const response = await fetch(result.uri);
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result as string;
-      // Strip the data:image/jpeg;base64, prefix
-      resolve(dataUrl.split(',')[1]);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
+function err(msg: string): ScanResult {
+  return {
+    success: false, error: msg, items: [],
+    confidence: 'low', extraction_notes: msg,
+    supplier: null, invoice_date: null, invoice_number: null,
+    detected_language: 'unknown', subtotal: null,
+    tax_amount: null, grand_total: null,
+    currency: 'INR', latency_ms: 0,
+  };
 }
 
-// ── Main: scan a bill image ─────────────────────────────────────────────────
-
-export async function scanBill(imageUri: string): Promise<ScanResult> {
-  const controller = new AbortController();
-  // 12s timeout: 10s Gemini + 2s network margin (matches original)
-  const timeout = setTimeout(() => controller.abort(), 12_000);
-
+async function toBase64(uri: string): Promise<string> {
   try {
-    // Compress image before sending
-    const base64Image = await compressImage(imageUri);
-
-    const response = await fetch(`${API_BASE}/scan-bill`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        image: base64Image,
-        mimeType: 'image/jpeg',
-      }),
-      signal: controller.signal,
+    const compressed = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 1024 } }],
+      { compress: 0.8, format: SaveFormat.JPEG }
+    );
+    const response = await fetch(compressed.uri);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = reader.result as string;
+        // Strip data URI prefix if present
+        const base64 = result.includes(',') ? result.split(',')[1] : result;
+        resolve(base64);
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
     });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const err = await response.json();
-      return {
-        success: false,
-        error: err.error || `Server error ${response.status}`,
-        items: [],
-        confidence: 'low',
-        extraction_notes: 'API error',
-        supplier: null,
-        invoice_date: null,
-        invoice_number: null,
-        detected_language: 'unknown',
-        subtotal: null,
-        tax_amount: null,
-        grand_total: null,
-        currency: 'INR',
-        latency_ms: 0,
-      };
-    }
-
-    const result = await response.json();
-    return result;
-
-  } catch (err: any) {
-    clearTimeout(timeout);
-
-    // AbortController fires on timeout
-    if (err.name === 'AbortError') {
-      return {
-        success: false,
-        error: 'Scan timed out (12s). Check your internet connection and try again.',
-        items: [],
-        confidence: 'low',
-        extraction_notes: 'Timeout',
-        supplier: null,
-        invoice_date: null,
-        invoice_number: null,
-        detected_language: 'unknown',
-        subtotal: null,
-        tax_amount: null,
-        grand_total: null,
-        currency: 'INR',
-        latency_ms: 12000,
-      };
-    }
-
-    return {
-      success: false,
-      error: err.message || 'Unknown error',
-      items: [],
-      confidence: 'low',
-      extraction_notes: 'Network error',
-      supplier: null,
-      invoice_date: null,
-      invoice_number: null,
-      detected_language: 'unknown',
-      subtotal: null,
-      tax_amount: null,
-      grand_total: null,
-      currency: 'INR',
-      latency_ms: 0,
-    };
+  } catch (e: any) {
+    throw new Error('Image compression failed: ' + e.message);
   }
 }
 
-// ── Daily briefing ──────────────────────────────────────────────────────────
+async function callGemini(base64: string): Promise<ScanResult> {
+  const start = Date.now();
+
+  // Strip prefix if present
+  const cleanBase64 = base64.includes(',') ? base64.split(',')[1] : base64;
+
+  const body = {
+    contents: [{
+      role: 'user',
+      parts: [
+        { text: PROMPT },
+        { inline_data: { mime_type: 'image/jpeg', data: cleanBase64 } },
+      ],
+    }],
+    generationConfig: { temperature: 0.1, maxOutputTokens: 2048 },
+  };
+
+  const res = await fetch(GEMINI_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  if (!res.ok) {
+    const errData = await res.json();
+    return err(`Gemini error ${res.status}: ${errData?.error?.message || 'unknown'}`);
+  }
+
+  const data = await res.json();
+  const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  if (!raw) return err('Gemini returned empty response');
+
+  // Clean and parse JSON
+  const cleaned = raw
+    .replace(/```json\n?/gi, '')
+    .replace(/```\n?/gi, '')
+    .trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    return {
+      ...parsed,
+      success: true,
+      invoice_number: parsed.invoice_number || null,
+      detected_language: parsed.detected_language || 'English',
+      subtotal: parsed.subtotal || null,
+      tax_amount: parsed.tax_amount || null,
+      currency: 'INR',
+      extraction_notes: parsed.extraction_notes || '',
+      latency_ms: Date.now() - start,
+    };
+  } catch {
+    return err('Could not parse Gemini response: ' + cleaned.substring(0, 100));
+  }
+}
+
+// ── PUBLIC EXPORTS ──────────────────────────────────────────────────
+
+export async function scanBill(imageUri: string): Promise<ScanResult> {
+  try {
+    const base64 = await toBase64(imageUri);
+    return await callGemini(base64);
+  } catch (e: any) {
+    return err(e.message || 'Unknown error');
+  }
+}
+
+export async function scanBillBase64(base64: string): Promise<ScanResult> {
+  try {
+    return await callGemini(base64);
+  } catch (e: any) {
+    return err(e.message || 'Unknown error');
+  }
+}
 
 export async function getDailyBriefing(params: {
   inventory: Record<string, any>;
@@ -174,71 +183,30 @@ export async function getDailyBriefing(params: {
   festival?: string;
   language?: 'English' | 'Telugu' | 'Hindi';
 }): Promise<BriefingResult> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
-
+  const start = Date.now();
   try {
-    const response = await fetch(`${API_BASE}/daily-briefing`, {
+    const lang = params.language || 'English';
+    const prompt = `You are a friendly advisor for a Kirana store in India.
+Write a 3-sentence morning briefing based on this inventory: ${JSON.stringify(params.inventory)}.
+Weather: ${params.weather || 'normal'}. Festival: ${params.festival || 'none'}.
+${lang !== 'English' ? `Respond in ${lang}.` : 'Respond in clear English.'}
+Return ONLY the briefing text, nothing else.`;
+
+    const res = await fetch(GEMINI_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(params),
-      signal: controller.signal,
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.7, maxOutputTokens: 256 },
+      }),
     });
 
-    clearTimeout(timeout);
+    const data = await res.json();
+    const briefing = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
+      || 'Good morning! Check your stock levels today.';
 
-    if (!response.ok) {
-      throw new Error(`Server error ${response.status}`);
-    }
-
-    return await response.json();
-
-  } catch (err: any) {
-    clearTimeout(timeout);
-    return {
-      success: false,
-      briefing: 'Unable to load briefing. Check your connection.',
-      language: params.language || 'English',
-      latency_ms: 0,
-    };
-  }
-}
-
-/**
- * scanBillBase64 — accepts raw base64 string directly (no URI needed)
- * Drop-in for scanner.tsx which calls cam.capture() → base64
- */
-export async function scanBillBase64(base64: string): Promise<ScanResult> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 12_000);
-
-  try {
-    const response = await fetch(`${API_BASE}/scan-bill`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64, mimeType: 'image/jpeg' }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeout);
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || `Server error ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result;
-
-  } catch (err: any) {
-    clearTimeout(timeout);
-    return {
-      success: false,
-      error: err.name === 'AbortError' ? 'Scan timed out. Try again.' : err.message,
-      items: [], confidence: 'low', extraction_notes: 'Error',
-      supplier: null, invoice_date: null, invoice_number: null,
-      detected_language: 'unknown', subtotal: null, tax_amount: null,
-      grand_total: null, currency: 'INR', latency_ms: 0,
-    };
+    return { success: true, briefing, language: lang, latency_ms: Date.now() - start };
+  } catch (e: any) {
+    return { success: false, briefing: 'Good morning! Check your stock levels today.', language: 'English', latency_ms: Date.now() - start };
   }
 }

@@ -52,6 +52,7 @@ module.exports = ({ config }) => ({
     EXPO_PUBLIC_SUPABASE_URL:      process.env.EXPO_PUBLIC_SUPABASE_URL      ?? '',
     EXPO_PUBLIC_SUPABASE_ANON_KEY: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? '',
     EXPO_PUBLIC_MIXPANEL_TOKEN:    process.env.EXPO_PUBLIC_MIXPANEL_TOKEN    ?? '',
+    EXPO_PUBLIC_GEMINI_API_KEY:    process.env.EXPO_PUBLIC_GEMINI_API_KEY    ?? '',
     APP_ENV:                       process.env.APP_ENV                       ?? 'development',
     eas: {
       projectId: 'FILL_IN_AFTER_EAS_INIT',

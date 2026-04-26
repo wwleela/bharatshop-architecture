@@ -78,6 +78,7 @@ export default function ScannerTab() {
     }
 
     const scanned = await scanBillBase64(base64);
+    console.log("GEMINI RESULT:", JSON.stringify(scanned));
 
     if (!scanned || !scanned.success || scanned.items.length === 0) {
       await trackScanFailed('empty');
