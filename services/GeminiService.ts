@@ -6,6 +6,8 @@
 import * as ImageManipulator from 'expo-image-manipulator';
 import { SaveFormat } from 'expo-image-manipulator';
 
+import { ScannedProduct, ProductCategory } from '@/types';
+
 // ── PASTE YOUR KEY HERE ─────────────────────────────────────────────
 const GEMINI_KEY = (require('expo-constants').default.expoConfig?.extra?.EXPO_PUBLIC_GEMINI_API_KEY as string) || '';
 // ───────────────────────────────────────────────────────────────────
@@ -22,38 +24,22 @@ Return ONLY valid JSON, no other text:
     {
       "name": "string",
       "quantity": 1,
-      "unit": "pcs",
-      "unit_price": 0,
-      "total_price": 0
+      "cost_price": 0,
+      "total": 0,
+      "category": "dairy|snacks|beverages|staples|personal|other",
+      "confidence": "high|medium|low"
     }
   ],
-  "grand_total": 0,
-  "confidence": "high"
+  "grand_total": 0
 }`;
-
-export interface ScannedItem {
-  name: string;
-  brand: string | null;
-  quantity: number;
-  unit: string;
-  unit_price: number | null;
-  total_price: number;
-  mrp: number | null;
-}
 
 export interface ScanResult {
   success: boolean;
   supplier: string | null;
   invoice_date: string | null;
-  invoice_number: string | null;
-  detected_language: string;
-  items: ScannedItem[];
-  subtotal: number | null;
-  tax_amount: number | null;
+  items: ScannedProduct[];
   grand_total: number | null;
   currency: 'INR';
-  confidence: 'high' | 'medium' | 'low';
-  extraction_notes: string;
   latency_ms: number;
   error?: string;
 }
@@ -68,10 +54,8 @@ export interface BriefingResult {
 function err(msg: string): ScanResult {
   return {
     success: false, error: msg, items: [],
-    confidence: 'low', extraction_notes: msg,
-    supplier: null, invoice_date: null, invoice_number: null,
-    detected_language: 'unknown', subtotal: null,
-    tax_amount: null, grand_total: null,
+    supplier: null, invoice_date: null,
+    grand_total: null,
     currency: 'INR', latency_ms: 0,
   };
 }
@@ -91,7 +75,7 @@ async function toBase64(uri: string): Promise<string> {
         const result = reader.result as string;
         // Strip data URI prefix if present
         const base64 = result.includes(',') ? result.split(',')[1] : result;
-        resolve(base64);
+        resolve(base64 || '');
       };
       reader.onerror = reject;
       reader.readAsDataURL(blob);
@@ -125,32 +109,33 @@ async function callGemini(base64: string): Promise<ScanResult> {
   });
 
   if (!res.ok) {
-    const errData = await res.json();
+    const errData = await res.json() as any;
     return err(`Gemini error ${res.status}: ${errData?.error?.message || 'unknown'}`);
   }
 
-  const data = await res.json();
+  const data = await res.json() as any;
   const raw = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   if (!raw) return err('Gemini returned empty response');
 
-  // Clean and parse JSON
-  const cleaned = raw
-    .replace(/```json\n?/gi, '')
-    .replace(/```\n?/gi, '')
-    .trim();
+  // Robust JSON extraction: find content between first { and last }
+  const jsonMatch = raw.match(/\{[\s\S]*\}/);
+  const cleaned = jsonMatch ? jsonMatch[0] : raw;
 
   try {
+
     const parsed = JSON.parse(cleaned);
     return {
-      ...parsed,
       success: true,
-      invoice_number: parsed.invoice_number || null,
-      detected_language: parsed.detected_language || 'English',
-      subtotal: parsed.subtotal || null,
-      tax_amount: parsed.tax_amount || null,
+      supplier: parsed.supplier || null,
+      invoice_date: parsed.invoice_date || null,
+      items: (parsed.items || []).map((item: any) => ({
+        ...item,
+        category: item.category || 'other',
+        confidence: item.confidence || 'medium',
+      })),
+      grand_total: parsed.grand_total || null,
       currency: 'INR',
-      extraction_notes: parsed.extraction_notes || '',
       latency_ms: Date.now() - start,
     };
   } catch {
@@ -201,7 +186,7 @@ Return ONLY the briefing text, nothing else.`;
       }),
     });
 
-    const data = await res.json();
+    const data = await res.json() as any;
     const briefing = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim()
       || 'Good morning! Check your stock levels today.';
 

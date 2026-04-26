@@ -171,7 +171,9 @@ export function getUpcomingFestivals(withinDays = 7): FestivalEntry[] {
   const year = now.getFullYear();
 
   return ANNUAL_FESTIVALS.filter(f => {
-    const [m, d]  = f.date.split('-').map(Number);
+    const parts = f.date.split('-');
+    const [m, d]  = parts.map(Number);
+    if (m === undefined || d === undefined) return false;
     const fDate   = new Date(year, m - 1, d);
     const diffMs  = fDate.getTime() - now.getTime();
     const diffDays = diffMs / (1000 * 60 * 60 * 24);
@@ -180,6 +182,7 @@ export function getUpcomingFestivals(withinDays = 7): FestivalEntry[] {
   }).sort((a, b) => {
     const [am, ad] = a.date.split('-').map(Number);
     const [bm, bd] = b.date.split('-').map(Number);
+    if (am === undefined || ad === undefined || bm === undefined || bd === undefined) return 0;
     return new Date(year, am - 1, ad).getTime() - new Date(year, bm - 1, bd).getTime();
   });
 }

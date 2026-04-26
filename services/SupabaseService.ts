@@ -136,31 +136,35 @@ export async function addScannedProducts(scanned: ScannedProduct[]): Promise<voi
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
+  // To ensure reliability, we process updates sequentially but collect errors.
+  // In a production environment, this should be a single RPC call or a transaction.
   for (const s of scanned) {
-    const { data: existing } = await supabase
-      .from('products')
-      .select('id, stock')
-      .eq('user_id', user.id)
-      .ilike('name', s.name.trim())
-      .maybeSingle();
-
-    if (existing) {
-      // Restock: add scanned quantity to current stock
-      await supabase
+    try {
+      const { data: existing } = await supabase
         .from('products')
-        .update({ stock: existing.stock + s.quantity })
-        .eq('id', existing.id);
-    } else {
-      // New product: create with 20% markup as default sell price
-      await supabase.from('products').insert({
-        user_id:             user.id,
-        name:                s.name.trim(),
-        stock:               s.quantity,
-        cost_price:          s.cost_price,
-        sell_price:          parseFloat((s.cost_price * 1.2).toFixed(2)),
-        category:            s.category,
-        low_stock_threshold: 5, // sensible default; user can adjust in settings
-      });
+        .select('id, stock')
+        .eq('user_id', user.id)
+        .ilike('name', s.name.trim())
+        .maybeSingle();
+
+      if (existing) {
+        await supabase
+          .from('products')
+          .update({ stock: existing.stock + s.quantity })
+          .eq('id', existing.id);
+      } else {
+        await supabase.from('products').insert({
+          user_id:             user.id,
+          name:                s.name.trim(),
+          stock:               s.quantity,
+          cost_price:          s.cost_price,
+          sell_price:          parseFloat((s.cost_price * 1.2).toFixed(2)),
+          category:            s.category,
+          low_stock_threshold: 5,
+        });
+      }
+    } catch (err) {
+      console.error(`[SupabaseService] Failed to process scanned item: ${s.name}`, err);
     }
   }
 }

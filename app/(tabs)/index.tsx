@@ -59,7 +59,7 @@ export default function InsightsTab() {
   const { products } = useInventory();
   const totalProducts = products.length;
   const revenue = briefing?.todaySalesTotal ?? 0;
-  const lowStockItems = briefing?.lowStockItems ?? [];
+  const lowStockProducts = briefing?.lowStockProducts ?? [];
 
   // Load store location from settings
   const [city, setCity] = useState<string | null>(null);
@@ -162,13 +162,13 @@ export default function InsightsTab() {
       </FadeIn>
 
       {/* ── Low stock alert ── */}
-      {lowStockItems && lowStockItems.length > 0 && (
+      {lowStockProducts && lowStockProducts.length > 0 && (
         <FadeIn delay={100}>
           <View style={{ backgroundColor: T.redBg, borderRadius: 16, padding: 16, borderWidth: 0.5, borderColor: '#F5C6C2', marginBottom: 12 }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: T.red, marginBottom: 10, letterSpacing: 0.4 }}>
-              ⚠ LOW STOCK · {lowStockItems.length} item{lowStockItems.length !== 1 ? 's' : ''}
+              ⚠ LOW STOCK · {lowStockProducts.length} item{lowStockProducts.length !== 1 ? 's' : ''}
             </Text>
-            {lowStockItems.slice(0, 3).map((item: any, i: number) => (
+            {lowStockProducts.slice(0, 3).map((item: any, i: number) => (
               <View key={i} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 5, borderTopWidth: i > 0 ? 0.5 : 0, borderColor: '#F5C6C2' }}>
                 <Text style={{ fontSize: 13, color: T.text, flex: 1 }}>{item.name}</Text>
                 <Text style={{ fontSize: 13, fontWeight: '700', color: T.red }}>{item.stock} left</Text>

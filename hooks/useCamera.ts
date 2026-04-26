@@ -9,9 +9,10 @@ import { useRef, useState, useCallback } from 'react';
 import { useCameraPermissions } from 'expo-camera';
 import type { CameraView } from 'expo-camera';
 
-interface CameraHook {
-  cameraRef:         React.RefObject<CameraView>;
+export interface CameraHook {
+  cameraRef:         React.RefObject<CameraView | null>;
   hasPermission:     boolean;
+
   requestPermission: () => Promise<void>;
   flash:             'on' | 'off';
   toggleFlash:       () => void;

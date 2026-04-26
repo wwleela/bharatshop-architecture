@@ -25,11 +25,11 @@ async function fetchWeather(lat: number, lon: number): Promise<WeatherData> {
   const timeout    = setTimeout(() => controller.abort(), 4_000);
 
   try {
-    const res = await fetch(url, { signal: controller.signal });
+    const res = await fetch(url, { signal: controller.signal as any });
     clearTimeout(timeout);
     if (!res.ok) throw new Error(`Open-Meteo error: ${res.status}`);
 
-    const json = await res.json();
+    const json = await res.json() as any;
     const temp  = json?.current?.temperature_2m  ?? 25;
     const precip = json?.current?.precipitation   ?? 0;
 

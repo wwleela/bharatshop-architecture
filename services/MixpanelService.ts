@@ -13,7 +13,7 @@ const IS_EXPO_GO = Constants.appOwnership === 'expo';
 
 // ── Lazy singleton ────────────────────────────────────────────
 
-let _mixpanel: import('mixpanel-react-native').default | null = null;
+let _mixpanel: import('mixpanel-react-native').Mixpanel | null = null;
 let _initialized = false;
 
 async function getMixpanel() {
@@ -22,7 +22,7 @@ async function getMixpanel() {
   if (_initialized)         return _mixpanel;
 
   try {
-    const { default: Mixpanel } = await import('mixpanel-react-native');
+    const { Mixpanel } = await import('mixpanel-react-native');
     _mixpanel     = new Mixpanel(Config.mixpanel.token, true);
     await _mixpanel.init();
     _initialized = true;
