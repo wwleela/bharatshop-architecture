@@ -12,6 +12,7 @@ import { useDailyBriefing } from '@/hooks/useDailyBriefing';
 import { useInventory }     from '@/hooks/useInventory';
 import { useAuth }          from '@/context/AuthContext';
 import { BriefingCard }     from '@/components/cards/BriefingCard';
+import LoadingScreen        from '@/components/LoadingScreen';
 import { formatINR }        from '@/services/UPIService';
 import { getStoreConfig }   from '@/app/settings';
 
@@ -55,8 +56,11 @@ function greeting() {
 
 export default function InsightsTab() {
   const insets = useSafeAreaInsets();
-  const { briefing, loading, refresh } = useDailyBriefing();
+  const { briefing, loading: briefingLoading, refresh } = useDailyBriefing();
   const { products } = useInventory();
+  
+  const [showSplash, setShowSplash] = useState(true);
+
   const totalProducts = products.length;
   const revenue = briefing?.todaySalesTotal ?? 0;
   const lowStockProducts = briefing?.lowStockProducts ?? [];
@@ -71,7 +75,7 @@ export default function InsightsTab() {
     });
   }, []);
 
-  if (loading && !briefing) {
+  if (briefingLoading && !briefing) {
     return (
       <View style={{ flex: 1, backgroundColor: T.bg, alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color={T.saffron} size="large" />
@@ -81,17 +85,20 @@ export default function InsightsTab() {
   }
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: T.bg }}
-      contentContainerStyle={{
-        paddingTop: insets.top + 16,
-        paddingHorizontal: 16,
-        paddingBottom: insets.bottom + 32,
-      }}
-      refreshControl={
-        <RefreshControl refreshing={loading} onRefresh={refresh} tintColor={T.saffron} progressViewOffset={insets.top} />
-      }
-    >
+    <View style={{ flex: 1 }}>
+      {showSplash && <LoadingScreen onFinish={() => setShowSplash(false)} />}
+      
+      <ScrollView
+        style={{ flex: 1, backgroundColor: T.bg }}
+        contentContainerStyle={{
+          paddingTop: insets.top + 16,
+          paddingHorizontal: 16,
+          paddingBottom: insets.bottom + 32,
+        }}
+        refreshControl={
+          <RefreshControl refreshing={briefingLoading} onRefresh={refresh} tintColor={T.saffron} progressViewOffset={insets.top} />
+        }
+      >
       {/* ── Header ── */}
       <FadeIn delay={0}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
@@ -194,6 +201,7 @@ export default function InsightsTab() {
         </View>
       </FadeIn>
     </ScrollView>
+    </View>
   );
 }
 
