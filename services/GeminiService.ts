@@ -135,11 +135,11 @@ function parseGeminiJson(text: string) {
 }
 
 // ── Image compression: 3.2MB → 85KB (97.3% reduction) ───────────────────────
-export async function compressToBase64(uri: string): Promise<string> {
+export async function compressToBase64(uri: string, quality = 0.7): Promise<string> {
   const result = await ImageManipulator.manipulateAsync(
     uri,
     [{ resize: { width: 1024 } }],
-    { compress: 0.7, format: SaveFormat.JPEG }
+    { compress: quality, format: SaveFormat.JPEG }
   );
   const response = await fetch(result.uri);
   const blob = await response.blob();
@@ -149,6 +149,48 @@ export async function compressToBase64(uri: string): Promise<string> {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
+}
+
+/**
+ * Re-compresses an existing base64 string to a lower quality.
+ * Used for "Low Bandwidth Mode" retries.
+ */
+export async function recompressBase64(base64: string, quality = 0.3): Promise<string> {
+  try {
+    // 1. Create a blob from base64
+    const byteCharacters = atob(base64);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: 'image/jpeg' });
+    
+    // 2. Use ImageManipulator to compress
+    // In Expo, we might need a URI. Blob to URI:
+    const uri = URL.createObjectURL(blob);
+    const compressed = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: 800 } }], // Even smaller for low bandwidth
+      { compress: quality, format: SaveFormat.JPEG }
+    );
+    
+    // 3. Back to base64
+    const res = await fetch(compressed.uri);
+    const finalBlob = await res.json() as any; // fetch blob logic here
+    // Re-using our reader logic
+    const finalRes = await fetch(compressed.uri);
+    const b = await finalRes.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(((reader.result as string) || '').split(',')[1] || '');
+      reader.onerror = reject;
+      reader.readAsDataURL(b);
+    });
+  } catch (err) {
+    console.error('[GeminiService] Recompression failed:', err);
+    return base64; // Fallback to original
+  }
 }
 
 // ── Core Gemini call ─────────────────────────────────────────────────────────

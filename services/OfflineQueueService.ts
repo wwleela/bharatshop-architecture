@@ -18,7 +18,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as Notifications from 'expo-notifications';
-import { scanBillBase64 } from './GeminiService';
+import { scanBillBase64, recompressBase64 } from './GeminiService';
 
 const QUEUE_KEY = 'bharatshop_bill_queue';
 const POLL_INTERVAL = 30_000; // check every 30s
@@ -123,23 +123,38 @@ export async function clearDoneItems(): Promise<void> {
   const queue = await loadQueue();
   await saveQueue(queue.filter(b => b.status !== 'done'));
 }
-
 // ── CORE: Process one pending bill ────────────────────────────────────────────
 async function processOneBill(bill: QueuedBill): Promise<QueuedBill> {
-  if (bill.status !== 'pending' || bill.retries >= 3) return bill;
+  if (bill.status !== 'pending' || bill.retries >= 5) return bill; // increased limit to allow low-bandwidth retries
+
+  let currentBase64 = bill.base64;
+
+  // LOW BANDWIDTH MODE: If already failed 3 times, shrink the image aggressively
+  if (bill.retries >= 3) {
+    console.log(`[OfflineQueue] Low bandwidth mode active for bill ${bill.id}`);
+    currentBase64 = await recompressBase64(bill.base64, 0.3);
+  }
 
   try {
-    const result = await scanBillBase64(bill.base64);
+    const result = await scanBillBase64(currentBase64);
 
     if (result.success) {
       return { ...bill, status: 'done', result, error: undefined };
     } else {
-      // Gemini returned error — retry up to 3 times
+      // Gemini returned error — retry up to 5 times (3 normal + 2 aggressive)
       const retries = bill.retries + 1;
+
+      if (retries === 3) {
+        await sendLocalNotification(
+          'Slow Connection Detected',
+          'Switching to low-bandwidth mode for pending bills. You can also type items manually.'
+        );
+      }
+
       return {
         ...bill,
         retries,
-        status: retries >= 3 ? 'failed' : 'pending',
+        status: retries >= 5 ? 'failed' : 'pending',
         error: result.error,
       };
     }
@@ -148,11 +163,12 @@ async function processOneBill(bill: QueuedBill): Promise<QueuedBill> {
     return {
       ...bill,
       retries,
-      status: retries >= 3 ? 'failed' : 'pending',
+      status: retries >= 5 ? 'failed' : 'pending',
       error: err.message,
     };
   }
 }
+
 
 // ── CORE: Flush the queue ─────────────────────────────────────────────────────
 // Called when connectivity is detected.
