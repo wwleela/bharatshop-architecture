@@ -12,6 +12,7 @@ import { CameraView } from 'expo-camera';
 
 import { useCamera }          from '@/hooks/useCamera';
 import { scanBillBase64 }      from '@/services/GeminiService';
+import { enqueueBill }         from '@/services/OfflineQueueService';
 import { addScannedProducts } from '@/services/SupabaseService';
 import {
   trackBillScanned, trackScanFailed, trackManualEntry,
@@ -19,6 +20,7 @@ import {
 import { ScannedProduct }                            from '@/types';
 import { Colors, TouchTargets, Spacing, Radius }     from '@/constants/Theme';
 import { formatINR }                                 from '@/services/UPIService';
+import SavedToTray                                   from '@/components/SavedToTray';
 
 type ScanStage = 'camera' | 'scanning' | 'results' | 'manual' | 'saving' | 'done';
 
@@ -64,8 +66,9 @@ export default function ScannerTab() {
   const [products, setProducts] = useState<ScannedProduct[]>([]);
   const [latency,  setLatency]  = useState<number | null>(null);
   const [error,    setError]    = useState<string | null>(null);
+  const [showTray, setShowTray] = useState(false);
 
-  // ── Capture → Gemini scan ──────────────────────────────────
+  // ── Capture → Offline Queue (Outbox pattern) ────────────────
   const handleCapture = useCallback(async () => {
     setError(null);
     setLatency(null);
@@ -80,33 +83,22 @@ export default function ScannerTab() {
     }
 
     try {
-      const scanned = await scanBillBase64(base64);
-      console.log("GEMINI RESULT:", JSON.stringify(scanned));
+      // ENQUEUE: This works offline and returns immediately
+      await enqueueBill(base64);
+      
+      // Feedback UX: Show "Saved to Tray" animation
+      setShowTray(true);
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // Wait for animation, then reset to camera for next snap
+      setTimeout(() => {
+        setShowTray(false);
+        setStage('camera');
+      }, 2000);
 
-      if (!scanned || !scanned.success) {
-        const errMsg = scanned?.error || 'Could not read the bill. Try a clearer photo.';
-        setError(errMsg);
-        await trackScanFailed(errMsg);
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        setStage('manual');
-      } else if (scanned.items.length === 0) {
-        setError('No items detected in this image.');
-        await trackScanFailed('empty');
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
-        setStage('manual');
-      } else {
-        setLatency(scanned.latency_ms);
-        await trackBillScanned(
-          scanned.items.length,
-          scanned.items.every(p => p.confidence === "high"),
-        );
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-        setProducts(scanned.items);
-        setStage('results');
-      }
     } catch (e) {
-      setError('Connection error. Check your internet.');
-      setStage('manual');
+      setError('Failed to save to outbox. Check storage.');
+      setStage('camera');
     }
   }, [cam]);
 
@@ -328,6 +320,13 @@ export default function ScannerTab() {
         facing="back"
         flash={cam.flash}
       >
+        {/* Saved to Tray Success Overlay */}
+        <SavedToTray 
+          visible={showTray} 
+          onHide={() => setShowTray(false)} 
+          isOnline={false} // scanner handles offline outbox
+        />
+
         {/* Scanning overlay */}
         {stage === 'scanning' && (
           <View style={{

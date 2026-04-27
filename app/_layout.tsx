@@ -12,6 +12,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
+import LoadingScreen from '@/components/LoadingScreen';
 
 // Hold the splash screen until we know auth state
 SplashScreen.preventAutoHideAsync();
@@ -31,7 +32,7 @@ function RootLayoutNav() {
     }
   }, [session, loading]);
 
-  if (loading) return null;
+  if (loading) return <LoadingScreen onFinish={() => {}} />;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
