@@ -22,6 +22,7 @@ import { Colors, TouchTargets, Spacing, Radius }     from '@/constants/Theme';
 import { formatINR }                                 from '@/services/UPIService';
 import SavedToTray                                   from '@/components/SavedToTray';
 import SwipeableCard                                 from '@/components/ui/SwipeableCard';
+import Toggle                                        from '@/components/ui/Toggle';
 
 type ScanStage = 'camera' | 'scanning' | 'results' | 'manual' | 'saving' | 'done';
 
@@ -470,6 +471,8 @@ function ProductRow({ product, index: i, onUpdate, onRemove }: {
   onUpdate: (i: number, f: keyof ScannedProduct, v: string | number) => void;
   onRemove: (i: number) => void;
 }) {
+  const [gstIncluded, setGstIncluded] = useState(!!product.gst_rate);
+
   return (
     <View style={{
       backgroundColor: Colors.surface, borderRadius: Radius.lg, padding: 14,
@@ -492,7 +495,7 @@ function ProductRow({ product, index: i, onUpdate, onRemove }: {
         </TouchableOpacity>
       </View>
 
-      <View style={{ flexDirection: 'row', gap: 12 }}>
+      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 12 }}>
         {[
           { label: 'QTY',    field: 'quantity'   as const, value: String(product.quantity),   kb: 'number-pad'  as const },
           { label: 'COST ₹', field: 'cost_price' as const, value: String(product.cost_price), kb: 'decimal-pad' as const },
@@ -523,6 +526,33 @@ function ProductRow({ product, index: i, onUpdate, onRemove }: {
             {formatINR(product.quantity * product.cost_price)}
           </Text>
         </View>
+      </View>
+
+      <View style={{ borderTopWidth: 0.5, borderColor: Colors.border, paddingTop: 8 }}>
+        <Toggle 
+          label="Include GST?" 
+          value={gstIncluded} 
+          onChange={(val) => {
+            setGstIncluded(val);
+            if (!val) onUpdate(i, 'gst_rate', 0);
+          }} 
+        />
+        {gstIncluded && (
+          <View style={{ marginTop: 8 }}>
+            <Text style={{ fontSize: 10, color: Colors.textMuted, fontWeight: '700', letterSpacing: 0.6, marginBottom: 4 }}>
+              GST % (CGST + SGST)
+            </Text>
+            <TextInput
+              value={String(product.gst_rate || 18)}
+              onChangeText={v => onUpdate(i, 'gst_rate', parseFloat(v) || 0)}
+              keyboardType="number-pad"
+              style={{
+                color: Colors.textPrimary, fontSize: 14, fontWeight: '600',
+                borderBottomWidth: 0.5, borderColor: Colors.border, paddingBottom: 4,
+              }}
+            />
+          </View>
+        )}
       </View>
     </View>
   );
