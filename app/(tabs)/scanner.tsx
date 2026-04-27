@@ -21,6 +21,7 @@ import { ScannedProduct }                            from '@/types';
 import { Colors, TouchTargets, Spacing, Radius }     from '@/constants/Theme';
 import { formatINR }                                 from '@/services/UPIService';
 import SavedToTray                                   from '@/components/SavedToTray';
+import SwipeableCard                                 from '@/components/ui/SwipeableCard';
 
 type ScanStage = 'camera' | 'scanning' | 'results' | 'manual' | 'saving' | 'done';
 
@@ -135,6 +136,15 @@ export default function ScannerTab() {
   const goManual = useCallback(async () => {
     await trackManualEntry(0);
     setProducts([]);
+    setStage('manual');
+  }, []);
+
+  const confirmItem = useCallback((item: ScannedProduct) => {
+    console.log('Confirmed:', item.name);
+  }, []);
+
+  const manualEditItem = useCallback((item: ScannedProduct) => {
+    setProducts([item]);
     setStage('manual');
   }, []);
 
@@ -257,29 +267,40 @@ export default function ScannerTab() {
           )}
         </View>
 
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: Spacing[4] }}>
-          {products.map((p, i) => (
-            <ProductRow
-              key={i} product={p} index={i}
-              onUpdate={updateProduct} onRemove={removeProduct}
+        <View style={{ flex: 1 }}>
+          {!isManual ? (
+            <SwipeableCard
+              data={products}
+              onSwipeRight={confirmItem}
+              onSwipeLeft={manualEditItem}
+              timer={3}
             />
-          ))}
+          ) : (
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: Spacing[4] }}>
+              {products.map((p, i) => (
+                <ProductRow
+                  key={i} product={p} index={i}
+                  onUpdate={updateProduct} onRemove={removeProduct}
+                />
+              ))}
 
-          <TouchableOpacity
-            onPress={() => setProducts(prev => [...prev, {
-              name: '', quantity: 1, cost_price: 0, total: 0,
-              category: 'other', confidence: 'low',
-            }])}
-            style={{
-              borderWidth: 1, borderColor: Colors.border,
-              borderStyle: 'dashed', borderRadius: Radius.lg,
-              padding: 14, alignItems: 'center', marginBottom: Spacing[4],
-            }}
-          >
-            <Text style={{ color: Colors.textMuted, fontSize: 14 }}>+ Add item</Text>
-          </TouchableOpacity>
-          <View style={{ height: 100 }} />
-        </ScrollView>
+              <TouchableOpacity
+                onPress={() => setProducts(prev => [...prev, {
+                  name: '', quantity: 1, cost_price: 0, total: 0,
+                  category: 'other', confidence: 'low',
+                }])}
+                style={{
+                  borderWidth: 1, borderColor: Colors.border,
+                  borderStyle: 'dashed', borderRadius: Radius.lg,
+                  padding: 14, alignItems: 'center', marginBottom: Spacing[4],
+                }}
+              >
+                <Text style={{ color: Colors.textMuted, fontSize: 14 }}>+ Add item</Text>
+              </TouchableOpacity>
+              <View style={{ height: 100 }} />
+            </ScrollView>
+          )}
+        </View>
 
         <View style={{
           padding: Spacing[4], borderTopWidth: 0.5, borderColor: Colors.border,
