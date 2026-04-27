@@ -31,23 +31,13 @@ Supplier bills often use bulk/carton units. You MUST break these down to retail 
 - "1 Box Maggi (48 packs)" → output as quantity: 48, unit: "packs"
 Calculate unit_price = (carton_price / retail_units). Always show retail units.
 
-## Language handling
-- Detect primary language automatically (English / Telugu / Hindi / Tamil / Mixed)
-- Telugu numerals (౧౨౩) and Hindi numerals (१२३) → convert to Arabic
-- Telugu terms: రాశి=qty, మొత్తం=total, తేదీ=date
-- Hindi terms: मात्रा=qty, कुल=total, दिनांक=date
-- Common abbreviations: P.G.=Parle-G, M.Tea=Madhur Tea, Br.Milk=Britannia Milk, Amul.Bt=Amul Butter, D.Salt=Dandi Salt
-
-## Handwritten bill rules
-- Struck-through values → use the FINAL non-crossed value
-- Pencil writing, smudged ink → extract what is legible
-- Missing fields → use null, never hallucinate
-
-## Output rules
-1. Return ONLY a single valid JSON object. No text before or after.
-2. Dates: DD/MM/YY → YYYY-MM-DD
-3. If completely illegible: {"error":"illegible","confidence":"low","items":[]}
-4. Verify: unit_price × quantity should equal total_price (flag mismatch in extraction_notes)
+## Critical Tax Handling
+- If bill shows CGST/SGST/IGST, extract BOTH:
+  * grossAmount (item price + tax)
+  * netAmount (item price before tax)
+- If no tax line visible, set taxAmount: 0
+- NEVER guess tax percentage - only extract if printed
+- Verify: unit_price × quantity should equal total_price (flag mismatch in extraction_notes)
 
 ## Required JSON schema
 {

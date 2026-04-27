@@ -5,7 +5,7 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, ScrollView,
-  ActivityIndicator, TextInput, Alert, Animated,
+  ActivityIndicator, TextInput, Alert, Animated, StyleSheet,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { CameraView } from 'expo-camera';
@@ -338,10 +338,13 @@ export default function ScannerTab() {
     <View style={{ flex: 1, backgroundColor: '#000' }}>
       <CameraView
         ref={cam.cameraRef}
-        style={{ flex: 1 }}
+        style={StyleSheet.absoluteFill}
         facing="back"
         flash={cam.flash}
-      >
+      />
+
+      {/* Overlay container for all camera UI elements */}
+      <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
         {/* Saved to Tray Success Overlay */}
         <SavedToTray 
           visible={showTray} 
@@ -460,7 +463,7 @@ export default function ScannerTab() {
             </>
           )}
         </View>
-      </CameraView>
+      </View>
     </View>
   );
 }
