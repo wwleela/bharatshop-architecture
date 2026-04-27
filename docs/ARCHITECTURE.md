@@ -415,6 +415,12 @@ if (IS_EXPO_GO) return null;
 
 As BharatShop OS transitions from an MVP to a national platform, the architecture is designed to scale in three distinct phases:
 
+### Scalability Architecture Breakdown
+- **Hot Path**: Supabase Postgres (transactions, inventory, payments) — optimized for sub-50ms ACID compliance.
+- **Cold Path**: Firebase Storage (bill images, user profiles) — offloads large binary blobs from the primary database.
+- **Edge Cache**: Firestore (daily briefings, notifications) — provides low-latency access to pre-computed intelligence.
+- **Read Replica**: Planned for 10K+ store deployments to maintain read performance during peak hours.
+
 ### Phase 1: MVP (Current)
 - **Architecture:** Single Supabase (PostgreSQL) instance in `ap-south-1` (Mumbai).
 - **Capacity:** Efficient GIN and GiST indexing supports 1K–10K stores with sub-200ms query latency.
