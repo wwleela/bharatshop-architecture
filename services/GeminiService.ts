@@ -136,11 +136,11 @@ function parseGeminiJson(text: string) {
   return JSON.parse(cleaned);
 }
 
-// ── Image compression: 3.2MB → 85KB (97.3% reduction) ───────────────────────
+// ── Image compression: 3.2MB → ~120KB (Higher res for handwritten OCR) ───────
 export async function compressToBase64(uri: string, quality = 0.7): Promise<string> {
   const result = await ImageManipulator.manipulateAsync(
     uri,
-    [{ resize: { width: 1024 } }],
+    [{ resize: { width: 1600 } }],
     { compress: quality, format: SaveFormat.JPEG }
   );
   const response = await fetch(result.uri);
@@ -241,7 +241,7 @@ async function callGemini(base64: string, signal?: AbortSignal): Promise<ScanRes
 // ── PUBLIC: scanBill (URI input — compresses internally) ─────────────────────
 export async function scanBill(imageUri: string): Promise<ScanResult> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
     const base64 = await compressToBase64(imageUri);
     const result = await callGemini(base64, controller.signal);
@@ -257,7 +257,7 @@ export async function scanBill(imageUri: string): Promise<ScanResult> {
 // ── PUBLIC: scanBillBase64 (raw base64 — scanner.tsx uses this) ──────────────
 export async function scanBillBase64(base64: string): Promise<ScanResult> {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 30_000);
   try {
     const result = await callGemini(base64, controller.signal);
     clearTimeout(timeout);
