@@ -79,6 +79,15 @@ CREATE INDEX idx_stores_location ON stores USING GIST (location);
 
 `GIST` (Generalised Search Tree) on `GEOGRAPHY` type enables `ST_DWithin()` to execute as an **index range scan** — not a sequential scan. As the stores table grows from 100 to 100,000 rows, query time grows as `O(log n)`, not `O(n)`.
 
+**Example: Search for "Dove Soap" within 2km**
+```sql
+SELECT store_name, ST_Distance(location, ST_GeomFromText('POINT(78.4867 17.3850)', 4326)) AS distance
+FROM inventory
+WHERE product_name ILIKE '%Dove%' 
+  AND ST_DWithin(location, ST_GeomFromText('POINT(78.4867 17.3850)', 4326), 2000)
+ORDER BY distance;
+```
+
 ### Low-Frequency WRITE Patterns
 
 **Sales: Append-Only Log with JSONB Snapshot**
@@ -388,6 +397,27 @@ if (IS_EXPO_GO) return null;
 | Token security | expo-secure-store | Hardware-backed keychain |
 | UPI commission | NPCI deeplink | Direct bank transfer |
 | Offline capability | AsyncStorage cache | 1-hour TTL briefing cache |
+
+---
+
+## 11. Scalability Plan
+
+As BharatShop OS transitions from an MVP to a national platform, the architecture is designed to scale in three distinct phases:
+
+### Phase 1: MVP (Current)
+- **Architecture:** Single Supabase (PostgreSQL) instance in `ap-south-1` (Mumbai).
+- **Capacity:** Efficient GIN and GiST indexing supports 1K–10K stores with sub-200ms query latency.
+- **Constraints:** Vertical scaling limit of the primary DB instance.
+
+### Phase 2: Growth (Regional)
+- **Strategy:** Read replicas via Supabase Pro/Enterprise.
+- **Mechanism:** Offload high-frequency READ operations (product searches, daily briefings) to read replicas.
+- **Benefit:** Increases concurrent user capacity by 5–10x without increasing write latency.
+
+### Phase 3: National Scale
+- **Strategy:** Horizontal partitioning (Sharding) by geography.
+- **Mechanism:** Implement zonal databases (North, South, East, West). Use a global router or "Home Region" metadata in the Auth layer to direct store owners to their local partition.
+- **Benefit:** Reduces physical latency by placing data closer to the user and provides regional fault isolation.
 
 ---
 
