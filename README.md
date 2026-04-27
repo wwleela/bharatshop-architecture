@@ -217,6 +217,22 @@ Submitted to **Google Solution Challenge 2026**.
 
 Developer profile: **https://g.dev/wwleela**
 
+## Troubleshooting
+
+If you encounter issues during development:
+
+```bash
+# Cache issues
+npx expo start -c
+
+# Port conflicts
+npx expo start --port 8082
+
+# Metro bundler stuck
+rm -rf node_modules/.cache
+npx expo start
+```
+
 ---
 
 *MIT License © 2026 BharatShop OS*
