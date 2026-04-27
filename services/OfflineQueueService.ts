@@ -17,7 +17,7 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
-import * as Notifications from 'expo-notifications';
+// import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants';
 import { scanBillBase64, recompressBase64 } from './GeminiService';
 
@@ -46,23 +46,32 @@ export type QueueStatus = {
 };
 
 // ── Notification setup ────────────────────────────────────────────────────────
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: true,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+/*
+if (!IS_EXPO_GO) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: false,
+      shouldSetBadge: true,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
+*/
 
 async function requestNotificationPermission() {
+  return false;
+  /*
   if (IS_EXPO_GO) return false;
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
+  */
 }
 
 async function sendLocalNotification(title: string, body: string) {
+  console.log(`[OfflineQueue] Notification (disabled): ${title} - ${body}`);
+  /*
   if (IS_EXPO_GO) {
     console.log(`[OfflineQueue] Notification (Expo Go - skipped): ${title} - ${body}`);
     return;
@@ -73,6 +82,7 @@ async function sendLocalNotification(title: string, body: string) {
     content: { title, body, sound: false },
     trigger: null, // immediate
   });
+  */
 }
 
 // ── Queue helpers ─────────────────────────────────────────────────────────────
