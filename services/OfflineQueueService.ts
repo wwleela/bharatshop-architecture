@@ -18,7 +18,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import NetInfo from '@react-native-community/netinfo';
 import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
 import { scanBillBase64, recompressBase64 } from './GeminiService';
+
+const IS_EXPO_GO = Constants.appOwnership === 'expo';
 
 const QUEUE_KEY = 'bharatshop_bill_queue';
 const POLL_INTERVAL = 30_000; // check every 30s
@@ -54,11 +57,16 @@ Notifications.setNotificationHandler({
 });
 
 async function requestNotificationPermission() {
+  if (IS_EXPO_GO) return false;
   const { status } = await Notifications.requestPermissionsAsync();
   return status === 'granted';
 }
 
 async function sendLocalNotification(title: string, body: string) {
+  if (IS_EXPO_GO) {
+    console.log(`[OfflineQueue] Notification (Expo Go - skipped): ${title} - ${body}`);
+    return;
+  }
   const granted = await requestNotificationPermission();
   if (!granted) return;
   await Notifications.scheduleNotificationAsync({

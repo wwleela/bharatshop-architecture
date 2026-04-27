@@ -9,6 +9,7 @@ import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { CartProvider } from '@/context/CartContext';
@@ -21,6 +22,14 @@ SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
   const { session, loading } = useAuth();
+
+  useEffect(() => {
+    AsyncStorage.setItem('test_storage', 'working_' + Date.now()).then(() => {
+      console.log('✅ AsyncStorage WORKING');
+    }).catch(err => {
+      console.error('❌ AsyncStorage FAILED:', err);
+    });
+  }, []);
 
   useEffect(() => {
     if (loading) return;
