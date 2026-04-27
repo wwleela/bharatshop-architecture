@@ -13,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Allow BharatShop to scan supplier bills"
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -21,7 +24,10 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +35,13 @@
     "plugins": [
       "expo-router",
       "expo-secure-store",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow BharatShop to scan supplier bills"
+        }
+      ]
     ]
   }
 }
