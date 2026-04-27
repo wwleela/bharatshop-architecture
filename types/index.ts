@@ -36,6 +36,12 @@ export interface ScannedProduct {
   total:      number;
   category:   ProductCategory;
   confidence: 'high' | 'medium' | 'low';
+  gst_rate?:  number;
+  tax_breakdown?: {
+    cgst: number;
+    sgst: number;
+    igst?: number;
+  };
 }
 
 // ── Sale types ───────────────────────────────────────────────

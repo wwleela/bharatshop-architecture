@@ -157,6 +157,14 @@ export default function SwipeableCard({ data, onSwipeRight, onSwipeLeft, timer =
           </View>
         </View>
 
+        {currentItem.tax_breakdown && (
+          <View style={styles.taxRow}>
+            <Text style={styles.taxText}>
+              GST ({currentItem.gst_rate}%): CGST {formatINR(currentItem.tax_breakdown.cgst)} + SGST {formatINR(currentItem.tax_breakdown.sgst)}
+            </Text>
+          </View>
+        )}
+
         <View style={styles.hintRow}>
           <Text style={styles.hintText}>← Swipe Left to Edit</Text>
           <Text style={styles.hintText}>Swipe Right to Confirm →</Text>
@@ -256,6 +264,18 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: Colors.emerald,
+  },
+  taxRow: {
+    marginTop: -16,
+    marginBottom: 20,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    padding: 8,
+    borderRadius: 8,
+  },
+  taxText: {
+    fontSize: 11,
+    color: '#8E8E93',
+    fontWeight: '500',
   },
   hintRow: {
     flexDirection: 'row',

@@ -64,7 +64,13 @@ Calculate unit_price = (carton_price / retail_units). Always show retail units.
       "unit_price": number or null,
       "total_price": number,
       "mrp": number or null,
-      "bulk_conversion_note": "string or null (e.g. '1 carton = 48 pcs')"
+      "gst_rate": number,
+      "tax_breakdown": {
+        "cgst": number,
+        "sgst": number,
+        "igst": number
+      },
+      "bulk_conversion_note": "string or null"
     }
   ],
   "subtotal": number or null,
@@ -86,6 +92,12 @@ export interface ScannedItem {
   unit_price: number | null;
   total_price: number;
   mrp: number | null;
+  gst_rate?: number;
+  tax_breakdown?: {
+    cgst: number;
+    sgst: number;
+    igst?: number;
+  };
   bulk_conversion_note?: string | null;
 }
 
