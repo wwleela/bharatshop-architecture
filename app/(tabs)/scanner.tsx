@@ -62,11 +62,13 @@ export default function ScannerTab() {
   const cam = useCamera();
   const [stage,    setStage]    = useState<ScanStage>('camera');
   const [products, setProducts] = useState<ScannedProduct[]>([]);
+  const [latency,  setLatency]  = useState<number | null>(null);
   const [error,    setError]    = useState<string | null>(null);
 
   // ── Capture → Gemini scan ──────────────────────────────────
   const handleCapture = useCallback(async () => {
     setError(null);
+    setLatency(null);
     setStage('scanning');
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -77,21 +79,34 @@ export default function ScannerTab() {
       return;
     }
 
-    const scanned = await scanBillBase64(base64);
-    console.log("GEMINI RESULT:", JSON.stringify(scanned));
+    try {
+      const scanned = await scanBillBase64(base64);
+      console.log("GEMINI RESULT:", JSON.stringify(scanned));
 
-    if (!scanned || !scanned.success || scanned.items.length === 0) {
-      await trackScanFailed('empty');
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (!scanned || !scanned.success) {
+        const errMsg = scanned?.error || 'Could not read the bill. Try a clearer photo.';
+        setError(errMsg);
+        await trackScanFailed(errMsg);
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        setStage('manual');
+      } else if (scanned.items.length === 0) {
+        setError('No items detected in this image.');
+        await trackScanFailed('empty');
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        setStage('manual');
+      } else {
+        setLatency(scanned.latency_ms);
+        await trackBillScanned(
+          scanned.items.length,
+          scanned.items.every(p => p.confidence === "high"),
+        );
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setProducts(scanned.items);
+        setStage('results');
+      }
+    } catch (e) {
+      setError('Connection error. Check your internet.');
       setStage('manual');
-    } else {
-      await trackBillScanned(
-        scanned.items.length,
-        scanned.items.every(p => p.confidence === "high"),
-      );
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setProducts(scanned.items);
-      setStage('results');
     }
   }, [cam]);
 
@@ -217,12 +232,19 @@ export default function ScannerTab() {
           paddingHorizontal: Spacing[4], paddingTop: 56, paddingBottom: Spacing[3],
           borderBottomWidth: 0.5, borderColor: Colors.border,
         }}>
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textPrimary }}>
-            {isManual ? '✍️ Manual Entry' : `📋 ${products.length} item${products.length !== 1 ? 's' : ''} found`}
-          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textPrimary }}>
+              {isManual ? '✍️ Manual Entry' : `📋 ${products.length} item${products.length !== 1 ? 's' : ''} found`}
+            </Text>
+            {latency && !isManual && (
+              <Text style={{ fontSize: 11, color: Colors.textMuted }}>
+                {(latency / 1000).toFixed(1)}s
+              </Text>
+            )}
+          </View>
           {isManual && (
             <Text style={{ fontSize: 13, color: Colors.textSecondary, marginTop: 4 }}>
-              Couldn't read the bill. Enter items below.
+              {error || "Couldn't read the bill. Enter items below."}
             </Text>
           )}
           {!isManual && (
