@@ -88,6 +88,17 @@ WHERE product_name ILIKE '%Dove%'
 ORDER BY distance;
 ```
 
+**Example: Hyperlocal Inventory Network (JOIN)**
+```sql
+SELECT s.store_name, i.product_name, i.stock_quantity,
+       ST_Distance(s.location, ST_MakePoint(78.4867, 17.3850)) as distance_km
+FROM stores s
+JOIN inventory i ON s.id = i.store_id  
+WHERE ST_DWithin(s.location::geography, ST_MakePoint(78.4867, 17.3850)::geography, 2000)
+  AND i.product_name ILIKE '%surf excel%'
+ORDER BY distance_km;
+```
+
 ### Low-Frequency WRITE Patterns
 
 **Sales: Append-Only Log with JSONB Snapshot**
