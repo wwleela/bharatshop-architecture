@@ -89,11 +89,11 @@ Gemini 2.5 Flash reads the supplier bill — printed, handwritten, Telugu, Hindi
 ### Google AI Integration ✅ (Mandatory Requirement)
 
 **Touchpoint 1 — Bill Scan** (`services/GeminiService.ts`)
-- Gemini 2.5 Flash processes bill image natively — no OCR pipeline
-- Reads printed, handwritten, Telugu, Hindi and English bills
-- Returns structured JSON: items, qty, unit_price, supplier, date
-- Confidence scoring: high / medium / low
-- Image compression: 3.2MB → 85KB (97.3% reduction) before API call
+- **Model:** Gemini 2.5 Flash processes bill images natively with zero OCR pipeline overhead.
+- **High-Resolution Preprocessing:** Images are pre-processed at **1600px** to ensure maximum legibility for dense handwritten text.
+- **Local Unit Conversion:** Automatically converts Kirana trade terms (e.g., "1 Carton", "1 Dozen", "1 Case") into retail-ready stock units.
+- **Multilingual Support:** Reads printed and handwritten bills in Telugu, Hindi, and English.
+- **Structured Data:** Returns high-confidence JSON: items, quantity, unit price, and Indian GST breakdown.
 
 **Touchpoint 2 — Daily Briefing** (`services/BriefingService.ts`)
 - Aggregates 24-hour inventory + weather + Indian festival calendar
@@ -126,14 +126,14 @@ const upiLink = `upi://pay?pa=${vpa}&pn=${name}&am=${amount}&cu=INR&mc=5411`;
 // Works with GPay, PhonePe, Paytm, BHIM — no gateway agreement needed
 ```
 
-### Image Compression Pipeline
+### Image Compression Pipeline (1600px Preprocessing)
 ```typescript
-// expo-image-manipulator: 97.3% reduction before Gemini API call
+// expo-image-manipulator: High-res 1600px constraint for handwritten accuracy
 const result = await manipulateAsync(uri,
-  [{ resize: { width: 1024 } }],
+  [{ resize: { width: 1600 } }], 
   { compress: 0.7, format: SaveFormat.JPEG }
 );
-// Output: ~85KB regardless of input device
+// Provides optimal balance between API token efficiency and OCR precision
 ```
 
 ---
